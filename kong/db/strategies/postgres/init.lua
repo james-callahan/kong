@@ -1315,7 +1315,7 @@ function _M.new(connector, schema, errors)
     upsert_statement = concat {
       "INSERT INTO ",  table_name_escaped, " (", insert_columns, ")\n",
       "     VALUES (", insert_expressions, ")\n",
-      "ON CONFLICT (", pk_escaped, ") DO UPDATE\n",
+      "ON CONFLICT ", primary_key_count > 0 and ("(" .. pk_escaped .. ") ") or "", "DO UPDATE\n",
       "        SET ",  concat(upsert_expressions, ", "), "\n",
       "  RETURNING ",  select_expressions, ";",
     }
@@ -1323,7 +1323,7 @@ function _M.new(connector, schema, errors)
     update_statement = concat {
       "   UPDATE ",  table_name_escaped, "\n",
       "      SET ",  concat(update_expressions, ", "), "\n",
-      "    WHERE (", pk_escaped, ") = (", update_placeholders, ")\n",
+      primary_key_count > 0 and (" WHERE (" .. pk_escaped .. ") = (" .. update_placeholders .. ")\n") or "",
       "      AND (", ttl_escaped, " IS NULL OR ", ttl_escaped, " >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC')\n",
       "RETURNING ",  select_expressions , ";"
     }
@@ -1331,7 +1331,7 @@ function _M.new(connector, schema, errors)
     select_statement = concat {
       "SELECT ",  select_expressions, "\n",
       "  FROM ",  table_name_escaped, "\n",
-      " WHERE (", pk_escaped, ") = (", primary_key_placeholders, ")\n",
+      primary_key_count > 0 and (" WHERE (" .. pk_escaped .. ") = (" .. primary_key_placeholders .. ")\n") or "",
       "   AND (", ttl_escaped, " IS NULL OR ", ttl_escaped, " >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC')\n",
       " LIMIT 1;"
     }
@@ -1340,7 +1340,7 @@ function _M.new(connector, schema, errors)
       "  SELECT ",  select_expressions, "\n",
       "    FROM ",  table_name_escaped, "\n",
       "   WHERE (", ttl_escaped, " IS NULL OR ", ttl_escaped, " >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC')\n",
-      "ORDER BY ",  pk_escaped, "\n",
+      primary_key_count > 0 and ("ORDER BY " .. pk_escaped .. "\n") or "",
       "   LIMIT $1;";
     }
 
@@ -1349,14 +1349,14 @@ function _M.new(connector, schema, errors)
       "    FROM ",  table_name_escaped, "\n",
       "   WHERE (", pk_escaped, ") > (", primary_key_placeholders, ")\n",
       "     AND (", ttl_escaped, " IS NULL OR ", ttl_escaped, " >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC')\n",
-      "ORDER BY ",  pk_escaped, "\n",
+      primary_key_count > 0 and ("ORDER BY " .. pk_escaped .. "\n") or "",
       "   LIMIT $", page_next_count, ";"
     }
 
     delete_statement = concat {
       "DELETE\n",
       "  FROM ", table_name_escaped, "\n",
-      " WHERE (", pk_escaped, ") = (", primary_key_placeholders, ")\n",
+      " WHERE ", primary_key_count > 0 and "(" .. pk_escaped .. ") = (" .. primary_key_placeholders .. ")" or "true",
       "   AND (", ttl_escaped, " IS NULL OR ", ttl_escaped, " >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC');",
     }
 
@@ -1409,21 +1409,21 @@ function _M.new(connector, schema, errors)
     update_statement = concat {
       "   UPDATE ",  table_name_escaped, "\n",
       "      SET ",  concat(update_expressions, ", "), "\n",
-      "    WHERE (", pk_escaped, ") = (", update_placeholders, ")\n",
+      primary_key_count > 0 and (" WHERE (" .. pk_escaped .. ") = (" .. update_placeholders .. ")\n") or "",
       "RETURNING ",  select_expressions , ";"
     }
 
     select_statement = concat {
       "SELECT ",  select_expressions, "\n",
       "  FROM ",  table_name_escaped, "\n",
-      " WHERE (", pk_escaped, ") = (", primary_key_placeholders, ")\n",
+      primary_key_count > 0 and (" WHERE (" .. pk_escaped .. ") = (" .. primary_key_placeholders .. ")\n") or "",
       " LIMIT 1;"
     }
 
     page_first_statement = concat {
       "  SELECT ", select_expressions, "\n",
       "    FROM ", table_name_escaped, "\n",
-      "ORDER BY ", pk_escaped, "\n",
+      primary_key_count > 0 and ("ORDER BY " .. pk_escaped .. "\n") or "",
       "   LIMIT $1;";
     }
 
@@ -1431,14 +1431,14 @@ function _M.new(connector, schema, errors)
       "  SELECT ",  select_expressions, "\n",
       "    FROM ",  table_name_escaped, "\n",
       "   WHERE (", pk_escaped, ") > (", primary_key_placeholders, ")\n",
-      "ORDER BY ",  pk_escaped, "\n",
+      primary_key_count > 0 and ("ORDER BY " .. pk_escaped .. "\n") or "",
       "   LIMIT $", page_next_count, ";"
     }
 
     delete_statement = concat {
       "DELETE\n",
       "  FROM ", table_name_escaped, "\n",
-      " WHERE (", pk_escaped, ") = (", primary_key_placeholders, ");",
+      primary_key_count > 0 and (" WHERE (" .. pk_escaped .. ") = (" .. primary_key_placeholders .. ");") or "",
     }
 
     count_statement = concat {
